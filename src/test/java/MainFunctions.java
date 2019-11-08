@@ -1,3 +1,4 @@
+import drivers.ChromeWebDrivers;
 import enums.ReportPages;
 import excelReportTable.ExcelReportTable;
 import mapProcessing.MapProcessing;
@@ -16,15 +17,15 @@ class MainFunctions {
     private static List<String> listOfSku;
     private static boolean isAuthorise = false;
 
-    private static String pathToFailedSkus = FileWork.readProperty("failed.skus");
-    private static String pathToExcelTable = FileWork.readProperty("excel.file");
+    private static String pathToFailedSkus = FileWork.readProperty("failed.skus","config.properties");
+    private static String pathToExcelTable = FileWork.readProperty("excel.file","config.properties");
 
     private static List<ReportPage> listFailedReportPages(String reportLink) {
         ReportPageAnalyser reportPage = new ReportPageAnalyser(reportLink);
 
         if (!isAuthorise) {
-            reportPage.makeAuthorisation(FileWork.readProperty("login"),
-                    FileWork.readProperty("password"));
+            reportPage.makeAuthorisation(FileWork.readProperty("login","credentials.properties"),
+                    FileWork.readProperty("password","credentials.properties"));
             isAuthorise = true;
         }
         reportPage.clickAllCountField();
@@ -47,6 +48,7 @@ class MainFunctions {
         } else {
             System.out.println("Enter report link");
         }
+        ChromeWebDrivers.exitDriver();
         FileWork.makeDir(".\\Results\\FailedSkuExcelTable");
         FileWork.makeDir(".\\Results\\FailedSkuFiles");
         table.writeToXLSXFile("Regression", pathToExcelTable);
@@ -68,13 +70,13 @@ class MainFunctions {
         } else {
             System.out.println("Enter report link");
         }
-        FileWork.creatingFileMap(new File(FileWork.readProperty("path.folder").trim()), result);
+        FileWork.creatingFileMap(new File(FileWork.readProperty("path.folder","config.properties").trim()), result);
         pathScenarioMap = MapProcessing.pathKeys("stories.*", "Scenario: *[A-Z\\d-]*", result);
         Map<String, List<String>> filteringMapOfList = MapProcessing.filteringMapOfList(pathScenarioMap, listOfScenariosID);
 
 //        Separator: <#> - for local run; <,> - for Jenkins run
         String suiteData = MapProcessing.concatKeyAndValueWithSeparate(filteringMapOfList, ",");
         FileWork.makeDir(".\\Results\\FailedSkuSuite");
-        FileWork.writeToFile(suiteData, FileWork.readProperty("suite.file"));
+        FileWork.writeToFile(suiteData, FileWork.readProperty("suite.file","config.properties"));
     }
 }

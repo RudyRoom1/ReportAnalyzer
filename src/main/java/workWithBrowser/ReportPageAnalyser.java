@@ -64,7 +64,6 @@ public class ReportPageAnalyser {
         getRowsQuntityField().click();
         getRowsQuantitySelectAll().click();
         allEntries = getAllRows();
-        ChromeWebDrivers.exitDriver();
     }
 
     private static List<ReportPage> getAllRows() {

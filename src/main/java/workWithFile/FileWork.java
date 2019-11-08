@@ -65,24 +65,23 @@ public class FileWork {
         return failingSku;
     }
 
-    public static String readProperty(String property) {
+    public static String readProperty(String property, String propertyFileName) {
         String result = "";
-        String propFileName = "config.properties";
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
 
-        try (InputStream inputStream = loader.getResourceAsStream(propFileName)) {
+        try (InputStream inputStream = loader.getResourceAsStream(propertyFileName)) {
             final Properties prop = new Properties();
             if (inputStream != null) {
                 prop.load(inputStream);
             } else {
-                throw new FileNotFoundException("property file '" + propFileName + "' not found in the classpath");
+                throw new FileNotFoundException("property file '" + propertyFileName + "' not found in the classpath");
             }
             result = prop.getProperty(property);
         } catch (Exception e) {
             System.out.println("Exception: " + e);
         }
-        if (result.equals("")){
-            System.out.println(String.format("\n%s is't set! Set %s in \"config.properties\" file!!\n",property,property));
+        if (result.equals("")) {
+            System.out.println(String.format("\n%s is't set! Set %s in %s file!!\n", property, property, propertyFileName));
         }
         return result;
     }
