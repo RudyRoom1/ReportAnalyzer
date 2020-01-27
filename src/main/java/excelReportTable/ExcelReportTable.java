@@ -1,5 +1,6 @@
 package excelReportTable;
 
+import Entities.Test;
 import lombok.Data;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFFont;
@@ -30,7 +31,7 @@ public class ExcelReportTable {
         sheet = workbook.createSheet(nameOfSheet);
     }
 
-    public void createHeader(String nameOfJob, ReportPage reportPage) {
+    public void createHeader(ReportPage reportPage) {
 
         headerStyle = workbook.createCellStyle();
         setCellStyle(headerStyle);
@@ -42,38 +43,38 @@ public class ExcelReportTable {
         rowNum++;
         Row headerSecondLine = sheet.createRow(rowNum);
         Cell headerCell = headerFirstLine.createCell(0);
-        headerCell.setCellValue(String.format("%s - %s", nameOfJob, reportPage.getTotalPassRate()));
+        headerCell.setCellValue(String.format("%s - %s", reportPage.getNameOfJob(), reportPage.getTotalPassRate()));
         headerCell.setCellStyle(headerStyle);
         headerCell = headerFirstLine.createCell(1);
         headerCell.setCellStyle(headerStyle);
         headerCell = headerFirstLine.createCell(2);
         headerCell.setCellStyle(headerStyle);
-        headerCell = headerFirstLine.createCell(3);
-        headerCell.setCellStyle(headerStyle);
+//        headerCell = headerFirstLine.createCell(3);
+//        headerCell.setCellStyle(headerStyle);
 
         //        Second row of header
+//        headerCell = headerSecondLine.createCell(0);
+//        headerCell.setCellStyle(headerStyle);
+
         headerCell = headerSecondLine.createCell(0);
+        headerCell.setCellValue("Scenarios");
         headerCell.setCellStyle(headerStyle);
 
         headerCell = headerSecondLine.createCell(1);
-        headerCell.setCellValue("Scenarios");
+        headerCell.setCellValue("Error");
         headerCell.setCellStyle(headerStyle);
 
         headerCell = headerSecondLine.createCell(2);
         headerCell.setCellValue("Error");
         headerCell.setCellStyle(headerStyle);
 
-        headerCell = headerSecondLine.createCell(3);
-        headerCell.setCellValue("Status");
-        headerCell.setCellStyle(headerStyle);
-
         System.out.println("Header was created");
     }
 
-    public void setDataToTable(List<ReportPage> page) {
+    public void setDataToTable(ReportPage page) {
 
         style.setWrapText(true);
-        for (ReportPage entity : page) {
+        for (Test entity : page.getAllEntities()) {
             rowNum++;
             row = sheet.createRow(rowNum);
             cell = row.createCell(1);

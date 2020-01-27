@@ -4,7 +4,7 @@ import lombok.Getter;
 import workWithFile.FileWork;
 
 @Getter
-public enum ReportPages {
+public enum Reports {
 
     SMOKE_REPORT_PAGE(FileWork.readProperty("smoke.report.page","config.properties")),
     MOBC_REPORT_PAGE(FileWork.readProperty("mobc.report.page","config.properties")),
@@ -15,9 +15,9 @@ public enum ReportPages {
     ISSO_REPORT_PAGE(FileWork.readProperty("isso.report.page","config.properties")),
     CIAM_REPORT_PAGE(FileWork.readProperty("ciam.report.page","config.properties"));
 
-    private String reportPage;
+    private String link;
 
-    ReportPages(String reportPage) {
-        this.reportPage = reportPage;
+    Reports(String reportPage) {
+        this.link = reportPage;
     }
 }
