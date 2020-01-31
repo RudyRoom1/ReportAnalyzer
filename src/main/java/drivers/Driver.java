@@ -3,16 +3,29 @@ package drivers;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.phantomjs.PhantomJSDriver;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class Driver {
 
     private static WebDriver driver;
+    private static final String driverName = "chrome";
 
     public static WebDriver getDriver() {
         if (driver == null) {
-            WebDriverManager.chromedriver().setup();
-            driver = new ChromeDriver();
+            switch (driverName) {
+                case "chrome":
+                    WebDriverManager.chromedriver().setup();
+                    driver = new ChromeDriver();
+                    break;
+                case "ghost":
+                    WebDriverManager.phantomjs().setup();
+                    driver = new PhantomJSDriver();
+            }
         }
+        driver.manage().timeouts().implicitlyWait(5, SECONDS);
+        driver.manage().window().maximize();
         return driver;
     }
 

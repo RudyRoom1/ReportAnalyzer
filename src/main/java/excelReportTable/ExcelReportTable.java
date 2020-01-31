@@ -10,7 +10,8 @@ import pages.ReportPage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Data
@@ -48,16 +49,13 @@ public class ExcelReportTable {
         headerCell = headerFirstLine.createCell(1);
         headerCell.setCellStyle(headerStyle);
         headerCell = headerFirstLine.createCell(2);
+        headerCell.setCellValue(reportPage.getReportDate());
         headerCell.setCellStyle(headerStyle);
-//        headerCell = headerFirstLine.createCell(3);
-//        headerCell.setCellStyle(headerStyle);
-
-        //        Second row of header
-//        headerCell = headerSecondLine.createCell(0);
-//        headerCell.setCellStyle(headerStyle);
+        headerCell = headerFirstLine.createCell(3);
+        headerCell.setCellStyle(headerStyle);
 
         headerCell = headerSecondLine.createCell(0);
-        headerCell.setCellValue("Scenarios");
+        headerCell.setCellValue(String.format("Scenarios (Failed:%s)" ,reportPage.getFailedTests().size()));
         headerCell.setCellStyle(headerStyle);
 
         headerCell = headerSecondLine.createCell(1);
@@ -65,22 +63,26 @@ public class ExcelReportTable {
         headerCell.setCellStyle(headerStyle);
 
         headerCell = headerSecondLine.createCell(2);
-        headerCell.setCellValue("Error");
+        headerCell.setCellValue("Status");
+        headerCell.setCellStyle(headerStyle);
+
+        headerCell = headerSecondLine.createCell(3);
+        headerCell.setCellValue("Comments");
         headerCell.setCellStyle(headerStyle);
 
         System.out.println("Header was created");
     }
 
-    public void setDataToTable(ReportPage page) {
+    public void setDataToTable(List<Test> tests) {
 
         style.setWrapText(true);
-        for (Test entity : page.getAllEntities()) {
+        for (Test entity : tests) {
             rowNum++;
             row = sheet.createRow(rowNum);
-            cell = row.createCell(1);
+            cell = row.createCell(0);
             cell.setCellStyle(style);
             cell.setCellValue(entity.getTestID());
-            cell = row.createCell(2);
+            cell = row.createCell(1);
             cell.setCellStyle(style);
             cell.setCellValue(entity.getFailureReason());
         }
@@ -112,7 +114,8 @@ public class ExcelReportTable {
 
         File currDir = new File(pathToFoulder);
         String path = currDir.getAbsolutePath();
-        String fileLocation = String.format("%s\\%s_%s%s", path, nameOfFile, LocalDate.now().toString(), ".xlsx");
+        String timeNow = LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-MM-dd_HH-mm"));
+        String fileLocation = String.format("%s\\%s_%s%s", path, nameOfFile, timeNow, ".xlsx");
         FileOutputStream outputStream = null;
         try {
             outputStream = new FileOutputStream(fileLocation);

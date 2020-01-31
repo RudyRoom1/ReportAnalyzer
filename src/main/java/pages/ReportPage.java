@@ -2,11 +2,11 @@ package pages;
 
 import Entities.Test;
 import drivers.Driver;
+import enums.TypeOfTestStatus;
 import lombok.Getter;
 import mapProcessing.MapProcessing;
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.FindBys;
 import org.openqa.selenium.support.PageFactory;
 import workWithFile.FileWork;
 
@@ -19,28 +19,20 @@ import java.util.stream.Collectors;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 @Getter
-public class ReportPage {
-
-    private static WebDriver driver;
+public class ReportPage extends AbstractPage {
 
     private List<Test> allEntities;
     private static By rowField = By.xpath("//tbody/tr[@role='row']");
     private String totalPassRate;
     private String url;
     private String nameOfJob;
-    private HashMap<String, Integer> testFailureReason = new HashMap<String, Integer>();
+    private HashMap<String, Integer> testFailureReasonsWithCount = new HashMap<String, Integer>();
     private HashMap<String, String> testResultSummary = new HashMap<String, String>();
+    private String reportDate;
+    private List<Test> failedTests;
 
-    private static String TOTAL_PASS_RATE = "//*[@class='jqplot-pie-series jqplot-data-label'][1]";
-
-    @FindBy(xpath = "//input[@name='j_username']")
-    private WebElement loginField;
-
-    @FindBy(xpath = "//input[@name='j_password']")
-    private WebElement passwordField;
-
-    @FindBy(id = "yui-gen1-button")
-    private WebElement loginButton;
+    @FindBy(xpath = "//*[@class='jqplot-pie-series jqplot-data-label'][1]")
+    private WebElement totalPassRateElement;
 
     @FindBy(id = "myframe")
     private WebElement iFrame;
@@ -51,41 +43,51 @@ public class ReportPage {
     @FindBy(xpath = "//option[@value=\"-1\"]")
     private WebElement rowsQuantitySelectAll;
 
-    @FindBy(xpath = "//div[@id=\"test-results-tabs-1\"]//tr[./td[text()='Automated']]/td")
-    private List<WebElement> testResultSummaryTable;
+    @FindBy(xpath = "//span[@class='date-and-time']")
+    private WebElement reportDateElement;
+
+    private By testResultSummaryTable = By.xpath("//div[@id=\"test-results-tabs-1\"]//tr[./td[text()='Automated']]/td");
 
     @FindBy(id = "test_results_pie_chart")
     private WebElement pieChart;
 
 
+
+
     public ReportPage(String url) {
         this.url = url;
-        this.driver = Driver.getDriver();
-        driver.manage().timeouts().implicitlyWait(5, SECONDS);
-        driver.manage().window().maximize();
-        PageFactory.initElements(driver, this);
         gatherData();
     }
 
     public ReportPage gatherData() {
         driver.navigate().to(url);
-        makeAuthorisation(FileWork.readProperty("login", "credentials.properties"),
-                FileWork.readProperty("password", "credentials.properties"));
-        clickAllCountField();
+        driver.switchTo().frame(iFrame);
 
+
+        clickAllCountField();
+        fillReportDate();
         fillTotalPassRate();
         fillTestResultSummary();
+
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView();", pieChart);
+
         File pieChartImage = pieChart.getScreenshotAs(OutputType.FILE);
 
         allEntities = getAllRows();
-        //VEEERY SLOW method
+        fillFailedTests();
+        //TODO VEEERY SLOW method
         nameOfJob = MapProcessing.getSubstring("UAT15_[A-Z_]*", url);
-        fillOriginalTestFailedReasons();
+
+        fillUniqueTestFailedReasonsWithCount();
         return this;
     }
 
+    public void fillFailedTests() {
+        failedTests = getAllEntities().stream().filter(el -> el.getSuccessFailType() != TypeOfTestStatus.SUCCESS).collect(Collectors.toList());
+    }
+
     public void fillTestResultSummary() {
-        List<String> res = testResultSummaryTable.stream().map(el -> el.getText()).collect(Collectors.toList());
+        List<String> res = driver.findElements(testResultSummaryTable).stream().map(el -> el.getText()).collect(Collectors.toList());
         testResultSummary.put("Total", res.get(1));
         testResultSummary.put("Pass ", res.get(2));
         testResultSummary.put("Fail ", res.get(3));
@@ -93,32 +95,30 @@ public class ReportPage {
         testResultSummary.put("Ignored ", res.get(5));
     }
 
-    private void fillOriginalTestFailedReasons() {
-        allEntities.forEach(el -> {
-            if (Objects.isNull(testFailureReason.get(el.getFailureReason()))) {
-                testFailureReason.put(el.getFailureReason(), 1);
+    private void fillUniqueTestFailedReasonsWithCount() {
+        allEntities.stream().filter(el -> !Objects.isNull(el.getFailureReason())).forEach(el -> {
+            String reason = el.getFailureReason();
+
+            if (Objects.isNull(testFailureReasonsWithCount.get(reason))) {
+                testFailureReasonsWithCount.put(reason, 1);
             } else {
-                testFailureReason.replace(el.getFailureReason(), testFailureReason.get(el.getFailureReason() + 1));
+                testFailureReasonsWithCount.replace(reason, testFailureReasonsWithCount.get(reason + 1));
             }
 
         });
     }
 
     private void fillTotalPassRate() {
-        this.totalPassRate = driver.findElement(By.xpath(TOTAL_PASS_RATE)).getText();
+        this.totalPassRate = totalPassRateElement.getText();
     }
 
-    public void makeAuthorisation(String login, String password) {
-        loginField.sendKeys(login);
-        passwordField.sendKeys(password);
-        loginButton.click();
+    private void fillReportDate() {
+        this.reportDate = reportDateElement.getText();
     }
 
     public void clickAllCountField() {
-        driver.switchTo().frame(iFrame);
         rowsQuantityField.click();
         rowsQuantitySelectAll.click();
-//        allEntities = getAllRows();
     }
 
     private static List<Test> getAllRows() {
@@ -131,7 +131,6 @@ public class ReportPage {
         List<Test> allEntries;
 
         allEntries = allRows.stream().map(el -> new Test(el)).collect(Collectors.toList());
-//        Driver.exitDriver();
         List<String> result = allEntries.stream().map(Test::getTestID).collect(Collectors.toList());
         return String.join("\n", result);
     }

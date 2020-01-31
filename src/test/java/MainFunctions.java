@@ -1,85 +1,64 @@
+import Entities.Test;
 import drivers.Driver;
-import enums.Reports;
+import enums.ReportTypes;
 import enums.TypeOfTestStatus;
 import excelReportTable.ExcelReportTable;
-import mapProcessing.MapProcessing;
+import pages.JenkinsPage;
 import pages.ReportPage;
-import workWithBrowser.ReportPageAnalyser;
 import workWithFile.FileWork;
 
-import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
 class MainFunctions {
-    private static List<String> listOfSku;
     private static boolean isAuthorise = false;
 
     private static String pathToFailedSkus = FileWork.readProperty("failed.skus", "config.properties");
     private static String pathToExcelTable = FileWork.readProperty("excel.file", "config.properties");
 
-    public static void createReportForBiWeekly(Reports... reportLinks) {
+    public static void createReportForBiWeekly(ReportTypes... reportLinks) {
         if (reportLinks.length == 0) {
-            reportLinks = Reports.values();
+            reportLinks = ReportTypes.values();
         }
-//        List<ReportPage> listReportPages = new ArrayList<>();
         ExcelReportTable table = new ExcelReportTable("Regression");
-        for (Reports link : reportLinks) {
+        for (ReportTypes link : reportLinks) {
             ReportPage page = new ReportPage(link.getLink());
             table.createHeader(page);
-            table.setDataToTable(page);
         }
         Driver.exitDriver();
         FileWork.makeDir(".\\Results\\AAAAAAAAAAA");
         FileWork.makeDir(".\\Results\\FailedSkuFiles");
         table.writeToXLSXFile("Regression", pathToExcelTable);
-//        FileWork.writeToFile(failedSkus, pathToFailedSkus);
 
     }
-//
-    static void createExcelTableWithFailedSku(Reports... reportLink) {
-//        String failedSkus = "";
-//
-//        ExcelReportTable table = new ExcelReportTable("Regression");
-//        if (reportLink.length != 0) {
-//            for (Reports entity : reportLink) {
-//                String nameOfMavenJob = "";
-//                String entityValue = entity.getLink();
-//                List<ReportPage> listReportPages = listFailedReportPages(entityValue);
-//                nameOfMavenJob = MapProcessing.getSubstring("UAT15_[A-Z_]*", entityValue);
-//                table.createHeader(listReportPages.get(0));
-//                table.setDataToTable(listReportPages);
-//            }
-//        } else {
-//            System.out.println("Enter report link");
-//        }
-//        Driver.exitDriver();
-//        FileWork.makeDir(".\\Results\\FailedSkuExcelTable");
-//        FileWork.makeDir(".\\Results\\FailedSkuFiles");
-//        table.writeToXLSXFile("Regression", pathToExcelTable);
-//        FileWork.writeToFile(failedSkus, pathToFailedSkus);
+
+    static void createExcelTableWithFailedSku(ReportTypes... reportLink) {
+        String failedSkus = "";
+
+        ExcelReportTable table = new ExcelReportTable("Regression");
+
+        if (reportLink.length != 0) {
+            JenkinsPage jenk = new JenkinsPage();
+            jenk.makeAuthorisation(FileWork.readProperty("login", "credentials.properties"),
+                    FileWork.readProperty("password", "credentials.properties"));
+
+            for (ReportTypes entity : reportLink) {
+                String link = entity.getLink();
+                ReportPage page = new ReportPage(link);
+                table.createHeader(page);
+                table.setDataToTable(page.getFailedTests());
+            }
+        } else {
+            System.out.println("Enter report link");
+        }
+        Driver.exitDriver();
+        FileWork.makeDir(".\\Results\\FailedSkuExcelTable");
+        FileWork.makeDir(".\\Results\\FailedSkuFiles");
+        table.writeToXLSXFile("Regression", pathToExcelTable);
+        FileWork.writeToFile(failedSkus, pathToFailedSkus);
     }
-//
-//    private static List<ReportPage> listFailedReportPages(String reportLink) {
-//
-//        ReportPageAnalyser reportPage = new ReportPageAnalyser(reportLink);
-//
-//        if (!isAuthorise) {
-//            reportPageAnalyser.makeAuthorisation(FileWork.readProperty("login", "credentials.properties"),
-//                    FileWork.readProperty("password", "credentials.properties"));
-//            isAuthorise = true;
-//        }
-//        reportPage.clickAllCountField();
-//        return allNotSuccessReportPages();
-//    }
-//
-//    public static List<ReportPage> allNotSuccessReportPages() {
-//        List<ReportPage> allScenariosOnPage = allEntries;
-//        allScenariosOnPage.removeIf(el -> el.getSuccessFailType() == TypeOfTestStatus.SUCCESS);
-//        return allScenariosOnPage;
-//    }
-//
-    static void createSuit(Reports... reportLink) {
+
+    static void createSuit(ReportTypes... reportLink) {
 //        Map<String, String> result = new HashMap<>();
 //        Map<String, List<String>> pathScenarioMap;
 //        List<String> listOfScenariosID = new ArrayList<>();
