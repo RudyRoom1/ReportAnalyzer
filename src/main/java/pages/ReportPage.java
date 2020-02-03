@@ -1,14 +1,11 @@
 package pages;
 
 import Entities.Test;
-import drivers.Driver;
 import enums.TypeOfTestStatus;
 import lombok.Getter;
 import mapProcessing.MapProcessing;
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.PageFactory;
-import workWithFile.FileWork;
 
 import java.io.File;
 import java.util.HashMap;
@@ -16,11 +13,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 @Getter
 public class ReportPage extends AbstractPage {
-
     private List<Test> allEntities;
     private static By rowField = By.xpath("//tbody/tr[@role='row']");
     private String totalPassRate;
@@ -30,28 +24,28 @@ public class ReportPage extends AbstractPage {
     private HashMap<String, String> testResultSummary = new HashMap<String, String>();
     private String reportDate;
     private List<Test> failedTests;
+    private File pieChartImage;
+
 
     @FindBy(xpath = "//*[@class='jqplot-pie-series jqplot-data-label'][1]")
     private WebElement totalPassRateElement;
 
     @FindBy(id = "myframe")
-    private WebElement iFrame;
+    private WebElement iFrameElement;
 
     @FindBy(xpath = "//select[@name=\"test-results-table_length\"]")
-    private WebElement rowsQuantityField;
+    private WebElement rowsQuantityFieldElement;
 
     @FindBy(xpath = "//option[@value=\"-1\"]")
-    private WebElement rowsQuantitySelectAll;
+    private WebElement rowsQuantitySelectAllElement;
 
     @FindBy(xpath = "//span[@class='date-and-time']")
     private WebElement reportDateElement;
 
-    private By testResultSummaryTable = By.xpath("//div[@id=\"test-results-tabs-1\"]//tr[./td[text()='Automated']]/td");
+    private By testResultSummaryTableElement = By.xpath("//div[@id=\"test-results-tabs-1\"]//tr[./td[text()='Automated']]/td");
 
     @FindBy(id = "test_results_pie_chart")
-    private WebElement pieChart;
-
-
+    private WebElement pieChartElement;
 
 
     public ReportPage(String url) {
@@ -59,20 +53,15 @@ public class ReportPage extends AbstractPage {
         gatherData();
     }
 
-    public ReportPage gatherData() {
+    private ReportPage gatherData() {
         driver.navigate().to(url);
-        driver.switchTo().frame(iFrame);
-
+        driver.switchTo().frame(iFrameElement);
 
         clickAllCountField();
         fillReportDate();
         fillTotalPassRate();
         fillTestResultSummary();
-
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView();", pieChart);
-
-        File pieChartImage = pieChart.getScreenshotAs(OutputType.FILE);
-
+        fillPieChartImage();
         allEntities = getAllRows();
         fillFailedTests();
         //TODO VEEERY SLOW method
@@ -82,12 +71,17 @@ public class ReportPage extends AbstractPage {
         return this;
     }
 
-    public void fillFailedTests() {
-        failedTests = getAllEntities().stream().filter(el -> el.getSuccessFailType() != TypeOfTestStatus.SUCCESS).collect(Collectors.toList());
+    private void fillPieChartImage() {
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView();", pieChartElement);
+        pieChartImage = pieChartElement.getScreenshotAs(OutputType.FILE);
     }
 
-    public void fillTestResultSummary() {
-        List<String> res = driver.findElements(testResultSummaryTable).stream().map(el -> el.getText()).collect(Collectors.toList());
+    private void fillFailedTests() {
+        failedTests = allEntities.stream().filter(el -> el.getSuccessFailType() != TypeOfTestStatus.SUCCESS).collect(Collectors.toList());
+    }
+
+    private void fillTestResultSummary() {
+        List<String> res = driver.findElements(testResultSummaryTableElement).stream().map(el -> el.getText()).collect(Collectors.toList());
         testResultSummary.put("Total", res.get(1));
         testResultSummary.put("Pass ", res.get(2));
         testResultSummary.put("Fail ", res.get(3));
@@ -102,7 +96,7 @@ public class ReportPage extends AbstractPage {
             if (Objects.isNull(testFailureReasonsWithCount.get(reason))) {
                 testFailureReasonsWithCount.put(reason, 1);
             } else {
-                testFailureReasonsWithCount.replace(reason, testFailureReasonsWithCount.get(reason + 1));
+                testFailureReasonsWithCount.put(reason, testFailureReasonsWithCount.get(reason) +1);
             }
 
         });
@@ -116,9 +110,9 @@ public class ReportPage extends AbstractPage {
         this.reportDate = reportDateElement.getText();
     }
 
-    public void clickAllCountField() {
-        rowsQuantityField.click();
-        rowsQuantitySelectAll.click();
+    private void clickAllCountField() {
+        rowsQuantityFieldElement.click();
+        rowsQuantitySelectAllElement.click();
     }
 
     private static List<Test> getAllRows() {
@@ -126,7 +120,7 @@ public class ReportPage extends AbstractPage {
         return allRows.stream().map(el -> new Test(el)).collect(Collectors.toList());
     }
 
-    public String listOfAllScenarios() {
+    private String listOfAllScenarios() {
         List<WebElement> allRows = driver.findElements(rowField);
         List<Test> allEntries;
 

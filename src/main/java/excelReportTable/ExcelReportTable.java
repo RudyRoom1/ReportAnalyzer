@@ -22,11 +22,9 @@ public class ExcelReportTable {
     CellStyle style = workbook.createCellStyle();
     CellStyle headerStyle;
     XSSFFont font;
-
-
-    static int rowNum = 0;
     Row row;
     Cell cell;
+    static int rowNum = 0;
 
     public ExcelReportTable(String nameOfSheet) {
         sheet = workbook.createSheet(nameOfSheet);
@@ -47,9 +45,9 @@ public class ExcelReportTable {
         headerCell.setCellValue(String.format("%s - %s", reportPage.getNameOfJob(), reportPage.getTotalPassRate()));
         headerCell.setCellStyle(headerStyle);
         headerCell = headerFirstLine.createCell(1);
+        headerCell.setCellValue(reportPage.getReportDate());
         headerCell.setCellStyle(headerStyle);
         headerCell = headerFirstLine.createCell(2);
-        headerCell.setCellValue(reportPage.getReportDate());
         headerCell.setCellStyle(headerStyle);
         headerCell = headerFirstLine.createCell(3);
         headerCell.setCellStyle(headerStyle);
@@ -110,9 +108,9 @@ public class ExcelReportTable {
     }
 
     //        File create
-    public void writeToXLSXFile(String nameOfFile, String pathToFoulder) {
+    public void writeToXLSXFile(String nameOfFile, String pathToFolder) {
 
-        File currDir = new File(pathToFoulder);
+        File currDir = new File(pathToFolder);
         String path = currDir.getAbsolutePath();
         String timeNow = LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-MM-dd_HH-mm"));
         String fileLocation = String.format("%s\\%s_%s%s", path, nameOfFile, timeNow, ".xlsx");

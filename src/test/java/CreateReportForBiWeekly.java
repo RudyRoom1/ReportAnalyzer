@@ -1,10 +1,9 @@
 import enums.ReportTypes;
 
-public class CreateReportForBiWeely {
-
+public class CreateReportForBiWeekly {
     public static void main(String[] args) {
         MainFunctions.createReportForBiWeekly(
-                ReportTypes.CIAM_REPORT_PAGE
+                ReportTypes.DTH_VPOS_OFF_REPORT_PAGE
         );
     }
 }

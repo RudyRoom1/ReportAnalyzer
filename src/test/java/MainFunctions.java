@@ -3,6 +3,8 @@ import drivers.Driver;
 import enums.ReportTypes;
 import enums.TypeOfTestStatus;
 import excelReportTable.ExcelReportTable;
+import excelReportTable.WordReportTable;
+import lombok.SneakyThrows;
 import pages.JenkinsPage;
 import pages.ReportPage;
 import workWithFile.FileWork;
@@ -16,19 +18,24 @@ class MainFunctions {
     private static String pathToFailedSkus = FileWork.readProperty("failed.skus", "config.properties");
     private static String pathToExcelTable = FileWork.readProperty("excel.file", "config.properties");
 
+    @SneakyThrows
     public static void createReportForBiWeekly(ReportTypes... reportLinks) {
         if (reportLinks.length == 0) {
             reportLinks = ReportTypes.values();
         }
-        ExcelReportTable table = new ExcelReportTable("Regression");
+        makeAuthorization();
+        WordReportTable table = new WordReportTable();
+//        ExcelReportTable table = new ExcelReportTable("Regression");
         for (ReportTypes link : reportLinks) {
             ReportPage page = new ReportPage(link.getLink());
-            table.createHeader(page);
+            WordReportTable.generate(page);
+            WordReportTable.write();
+//            table.createHeader(page);
         }
         Driver.exitDriver();
         FileWork.makeDir(".\\Results\\AAAAAAAAAAA");
         FileWork.makeDir(".\\Results\\FailedSkuFiles");
-        table.writeToXLSXFile("Regression", pathToExcelTable);
+//        table.writeToXLSXFile("Regression", pathToExcelTable);
 
     }
 
@@ -38,9 +45,7 @@ class MainFunctions {
         ExcelReportTable table = new ExcelReportTable("Regression");
 
         if (reportLink.length != 0) {
-            JenkinsPage jenk = new JenkinsPage();
-            jenk.makeAuthorisation(FileWork.readProperty("login", "credentials.properties"),
-                    FileWork.readProperty("password", "credentials.properties"));
+            makeAuthorization();
 
             for (ReportTypes entity : reportLink) {
                 String link = entity.getLink();
@@ -56,6 +61,12 @@ class MainFunctions {
         FileWork.makeDir(".\\Results\\FailedSkuFiles");
         table.writeToXLSXFile("Regression", pathToExcelTable);
         FileWork.writeToFile(failedSkus, pathToFailedSkus);
+    }
+
+    private static void makeAuthorization() {
+        JenkinsPage jenk = new JenkinsPage();
+        jenk.makeAuthorisation(FileWork.readProperty("login", "credentials.properties"),
+                FileWork.readProperty("password", "credentials.properties"));
     }
 
     static void createSuit(ReportTypes... reportLink) {
