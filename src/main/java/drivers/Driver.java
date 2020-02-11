@@ -16,7 +16,7 @@ public class Driver {
         if (driver == null) {
             switch (driverName) {
                 case "chrome":
-                    WebDriverManager.chromedriver().setup();
+                    WebDriverManager.chromedriver().version("79.0.3945.36").setup();
                     driver = new ChromeDriver();
                     break;
                 case "ghost":
@@ -24,7 +24,7 @@ public class Driver {
                     driver = new PhantomJSDriver();
             }
         }
-        driver.manage().timeouts().implicitlyWait(5, SECONDS);
+        driver.manage().timeouts().implicitlyWait(10, SECONDS);
         driver.manage().window().maximize();
         return driver;
     }

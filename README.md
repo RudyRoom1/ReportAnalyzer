@@ -11,3 +11,9 @@ If you want create suite file of results you need:
 1) Open Run/Debug configuration
 2) Add new "Application"
 3) Enter in the "Main class" - "CreateSuitFile"
+
+To create a Report For Bi-weekly
+1) Open Run/Debug configuration
+2) Add new "Application"
+3) Enter in the "Main class" - "CreateReportForBiWeekly"
+

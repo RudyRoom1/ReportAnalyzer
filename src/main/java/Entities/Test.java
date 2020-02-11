@@ -5,14 +5,15 @@ import enums.TypeOfTestStatus;
 import lombok.Getter;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.support.FindBy;
+import pages.AbstractPage;
 
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Getter
-public class Test {
+public class Test extends AbstractPage {
     private final WebDriver driver;
 
     private Enum successFailType = TypeOfTestStatus.PENDING;
@@ -24,11 +25,16 @@ public class Test {
     private static String TEST_FAILURE_STEP = "//tr[@class='test-ERROR'][1]";
     private static String SUCCESS_FAIL_TYPE = ".//td/img";
 
+    @FindBy(xpath = "//tr[@class=\"test-ERROR\"]")
+    private WebElement failedTestExampleElement;
+
+    @FindBy(xpath = "//tr[@class=\"test-ERROR\"]//span[@class=\"nested-group-step\"]")
+    private WebElement failedTestExampleStepElement;
+
     public Test(WebElement element) {
         this.driver = Driver.getDriver();
         mainElement = element;
         fillAllFields();
-
     }
 
     private void fillAllFields() {
@@ -37,6 +43,38 @@ public class Test {
         if (successFailType != TypeOfTestStatus.SUCCESS) {
             fillFailureReason();
         }
+    }
+
+    private String getSkuTableName() {
+        Actions actions = new Actions(driver);
+
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", mainElement);
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        actions.keyDown(Keys.CONTROL).click(mainElement.findElement(By.xpath(".//a"))).keyUp(Keys.CONTROL).build().perform();
+
+        ArrayList<String> tabs = new ArrayList<>(driver.getWindowHandles());
+        driver.switchTo().window(tabs.get(1));
+        String bigString = "";
+        if (driver.findElements(By.xpath("//div[@class='story-title']")).size() == 2) {
+            bigString = driver.findElement(By.xpath(TEST_FAILURE_STEP)).getText();
+        } else {
+            failedTestExampleElement.click();
+            bigString = failedTestExampleStepElement.getText();
+        }
+        System.out.println("scenario step with sku table failed: " + bigString);
+        Pattern pattern = Pattern.compile("examples.*.table");
+        Matcher matcher = pattern.matcher(bigString);
+        matcher.find();
+        String result = matcher.group(0);
+
+        driver.close();
+        driver.switchTo().window(tabs.get(0)).switchTo().frame(0);
+        return result;
     }
 
     private String fillFailureReason() {
@@ -53,15 +91,15 @@ public class Test {
                         result += "\n" + failureReasonBig.split("REQUEST ===(.*?) HTTP")[0];
                         break;
                     case "SkuSelectorException":
+                        result += "\n" + getSkuTableName();
                         break;
                     case "NoSuchElementException":
-                        result += "\n" + failureReasonBig.split("Exception: (?!Timed).*")[0];
+//                        result += "\n" + failureReasonBig.split("Exception: (?!Timed).*")[0];
                         break;
                     case "TimeoutException":
                     default:
                         result += "\n" + failureReasonBig.split("Exception: (.*)")[0];
                         break;
-
                 }
 
             } else {
@@ -77,7 +115,7 @@ public class Test {
     private void fillTestID() {
         String text = mainElement.findElement(By.xpath(TEST_NAME)).getText();
 
-        Pattern pattern = Pattern.compile("([A-Z]*-[0-9-]{1,4}|PRECONDITIONS)(.*)");
+        Pattern pattern = Pattern.compile("([a-z,A-Z]*-[0-9-]{1,4}|PRECONDITIONS)(.*)");
         Matcher matcher = pattern.matcher(text);
 
         if (matcher.find()) {

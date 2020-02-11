@@ -17,6 +17,7 @@ class MainFunctions {
 
     private static String pathToFailedSkus = FileWork.readProperty("failed.skus", "config.properties");
     private static String pathToExcelTable = FileWork.readProperty("excel.file", "config.properties");
+    private static String pathToWordDocument = FileWork.readProperty("biweekly.report.folder", "config.properties");
 
     @SneakyThrows
     public static void createReportForBiWeekly(ReportTypes... reportLinks) {
@@ -24,19 +25,13 @@ class MainFunctions {
             reportLinks = ReportTypes.values();
         }
         makeAuthorization();
-        WordReportTable table = new WordReportTable();
-//        ExcelReportTable table = new ExcelReportTable("Regression");
         for (ReportTypes link : reportLinks) {
             ReportPage page = new ReportPage(link.getLink());
             WordReportTable.generate(page);
-            WordReportTable.write();
-//            table.createHeader(page);
         }
         Driver.exitDriver();
-        FileWork.makeDir(".\\Results\\AAAAAAAAAAA");
-        FileWork.makeDir(".\\Results\\FailedSkuFiles");
-//        table.writeToXLSXFile("Regression", pathToExcelTable);
-
+        FileWork.makeDir("Results\\BiWeeklyReport\\");
+        WordReportTable.write(pathToWordDocument);
     }
 
     static void createExcelTableWithFailedSku(ReportTypes... reportLink) {

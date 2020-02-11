@@ -6,25 +6,27 @@ import lombok.Getter;
 import mapProcessing.MapProcessing;
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.FindBy;
-
+import org.openqa.selenium.support.ui.ExpectedCondition;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import java.io.File;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Getter
 public class ReportPage extends AbstractPage {
+    private final By testSummaryElement = By.xpath("//div[./h4]");
     private List<Test> allEntities;
     private static By rowField = By.xpath("//tbody/tr[@role='row']");
     private String totalPassRate;
     private String url;
     private String nameOfJob;
-    private HashMap<String, Integer> testFailureReasonsWithCount = new HashMap<String, Integer>();
-    private HashMap<String, String> testResultSummary = new HashMap<String, String>();
+    private Map<String, Integer> testFailureReasonsWithCount = new TreeMap<String, Integer>();
+    private Map<String, String> testResultSummary = new TreeMap<>();
     private String reportDate;
     private List<Test> failedTests;
     private File pieChartImage;
+    private File testSummaryTablePic;
 
 
     @FindBy(xpath = "//*[@class='jqplot-pie-series jqplot-data-label'][1]")
@@ -54,8 +56,14 @@ public class ReportPage extends AbstractPage {
     }
 
     private ReportPage gatherData() {
-        driver.navigate().to(url);
+        driver.get(url);
         driver.switchTo().frame(iFrameElement);
+
+
+        System.out.println(driver.getWindowHandles());
+
+        new WebDriverWait(driver, 10).until(
+                webDriver -> ((JavascriptExecutor) webDriver).executeScript("return document.readyState").equals("complete"));
 
         clickAllCountField();
         fillReportDate();
@@ -64,7 +72,6 @@ public class ReportPage extends AbstractPage {
         fillPieChartImage();
         allEntities = getAllRows();
         fillFailedTests();
-        //TODO VEEERY SLOW method
         nameOfJob = MapProcessing.getSubstring("UAT15_[A-Z_]*", url);
 
         fillUniqueTestFailedReasonsWithCount();
@@ -73,6 +80,11 @@ public class ReportPage extends AbstractPage {
 
     private void fillPieChartImage() {
         ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView();", pieChartElement);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         pieChartImage = pieChartElement.getScreenshotAs(OutputType.FILE);
     }
 
@@ -81,12 +93,7 @@ public class ReportPage extends AbstractPage {
     }
 
     private void fillTestResultSummary() {
-        List<String> res = driver.findElements(testResultSummaryTableElement).stream().map(el -> el.getText()).collect(Collectors.toList());
-        testResultSummary.put("Total", res.get(1));
-        testResultSummary.put("Pass ", res.get(2));
-        testResultSummary.put("Fail ", res.get(3));
-        testResultSummary.put("Pending ", res.get(4));
-        testResultSummary.put("Ignored ", res.get(5));
+        testSummaryTablePic = driver.findElement(testSummaryElement).getScreenshotAs(OutputType.FILE);
     }
 
     private void fillUniqueTestFailedReasonsWithCount() {
@@ -111,6 +118,8 @@ public class ReportPage extends AbstractPage {
     }
 
     private void clickAllCountField() {
+//        WebDriverWait wait = new WebDriverWait(driver, 10);
+//wait.until(ExpectedConditions.presenceOfNestedElementLocatedBy(rowsQuantityFieldElement,By.xpath("")));
         rowsQuantityFieldElement.click();
         rowsQuantitySelectAllElement.click();
     }

@@ -1,100 +1,70 @@
 package excelReportTable;
 
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.util.Units;
 import org.apache.poi.xwpf.usermodel.*;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.impl.CTPImpl;
 import pages.ReportPage;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 public class WordReportTable {
-//    public static void main(String[] args) throws Exception {
-//        generate();
-//    }
 
     private static XWPFDocument document = new XWPFDocument();
 
     public static void generate(ReportPage page) throws Exception {
-        XWPFDocument doc = new XWPFDocument();
-        XWPFParagraph paragraph = doc.createParagraph();
+        XWPFTable table = document.createTable(1,2);
+
+        XWPFTableRow tableRowOne = table.getRow(0);
+
+        addPictureToCell(page.getPieChartImage(), tableRowOne.getCell(0));
+        List<String> listOffailureReasons = new ArrayList();
+        page.getTestFailureReasonsWithCount().forEach((k, v) -> listOffailureReasons.add(String.format("%s\t%s\t", v, k)));
+        listOffailureReasons.sort(Comparator.comparingInt(o1 -> Integer.parseInt(((String) o1).split("\t")[0])).reversed());
+
+        addHeaderToCell(page,tableRowOne.getCell(1));
+        addPictureToCell(page.getTestSummaryTablePic(), tableRowOne.getCell(1));
+        XWPFRun runOfTextCell = tableRowOne.getCell(1).addParagraph().createRun();
+
+        runOfTextCell.setText("Analysis:");
+        for (String line : listOffailureReasons) {
+            runOfTextCell.setText(line);
+            runOfTextCell.addBreak();
+        }
+    }
+
+    public static void addPictureToCell(File image, XWPFTableCell cell) throws IOException, InvalidFormatException {
+        XWPFParagraph paragraph = cell.addParagraph();
         XWPFRun run = paragraph.createRun();
 
-        File image1 = page.getPieChartImage();
-        String imgFile1 = image1.getName();
+
+        File image1 = image;
         BufferedImage bimg1 = ImageIO.read(image1);
-
-        int width1 = bimg1.getWidth()/2;
-        int height1 = bimg1.getHeight()/2;
-
-
+        int width1 = bimg1.getWidth() / 2;
+        int height1 = bimg1.getHeight() / 2;
         run.addPicture(new FileInputStream(image1), XWPFDocument.PICTURE_TYPE_JPEG, "1.jpg", Units.toEMU(width1), Units.toEMU(height1));
-        //create table
-        XWPFTable table = document.createTable();
-//        XWPFTableRow row1 = table.createRow();
-//        row1.createCell().setParagraph(paragraph);
+    }
 
-
-        //create first row
-        XWPFTableRow tableRowOne = table.getRow(0);
-        tableRowOne.getCell(0).setParagraph(paragraph);
-
-        String tableTitles = page.getTestResultSummary().keySet().stream().collect(Collectors.joining("\t"));
-        String tableValues = page.getTestResultSummary().values().stream().collect(Collectors.joining("\t"));
-        String failureReasons = "";
-        List<String> failuresList = new ArrayList<>();
-        page.getTestFailureReasonsWithCount().keySet().stream(key -> {
-
-            String value = page.getTestFailureReasonsWithCount().get(key);
-            failureReasons=failureReasons+String.format("%s - %s\n",value,key);
-
-        });
-
-        String pageDataToReport = String.format("%s\n" +
-                        "Test Result Summary:\n" +
-                        "%s\n" +
-                        "%s\n" +
-                        "Analyzis Of Failures:\n" +
-                        "%s",
-                page.getNameOfJob(),
-                tableTitles,
-                tableValues,
-                failureReasons
-                );
-
-
-        tableRowOne.addNewTableCell().setText(pageDataToReport);
-
-
-
-
-//        tableRowOne.addNewTableCell().setText("col three, row one");
-//
-//        //create second row
-//        XWPFTableRow tableRowTwo = table.createRow();
-//
-//        tableRowTwo.getCell(0).setText("col one, row two");
-//        tableRowTwo.getCell(1).setText("col two, row two");
-//        tableRowTwo.getCell(2).setText("col three, row two");
-//
-//        XWPFTableRow tableRowThree = table.createRow();
-//        tableRowThree.getCell(1).setText("col two, row three");
-//        tableRowThree.getCell(2).setText("col three, row three");
-//
-//
+    public static void addHeaderToCell(ReportPage page , XWPFTableCell cell) throws IOException, InvalidFormatException {
+        XWPFParagraph paragraph = cell.addParagraph();
+        XWPFRun run = paragraph.createRun();
+        run.setText(page.getNameOfJob());
+        run.addBreak();
 
     }
 
-    public static void write() throws Exception{
-        FileOutputStream out = new FileOutputStream(new File("create_table.docx"));
+    public static void write(String filePath) throws Exception {
+
+        String timeNow = LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-MM-dd_HH-mm"));
+
+        FileOutputStream out = new FileOutputStream(new File(filePath +"Bi-Weekly_"+ timeNow+ ".docx"));
         document.write(out);
         out.close();
-        System.out.println("create_table.docx written successully");
+        System.out.println("create_table.docx written successfully");
 
     }
 }
